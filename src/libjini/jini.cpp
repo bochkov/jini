@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <windows.h>
 
+#define TITLE "jini.dll"
 #define ERROR_LOAD_JVM_DLL 1001
 #define ERROR_CREATE_JAVA_VM 1002
 #define ERROR_MAIN_CLASS_LOAD 1003
@@ -26,10 +27,15 @@ bool check_exception(JNIEnv *env) {
     return false;
 }
 
+extern "C" void show_error_msg(const char *msg, const char *title) {
+    MessageBox(nullptr, msg, title, MB_ICONERROR);
+}
+
 extern "C" int start_jvm(char *jvm_dll_path, char *class_path, char *main_class,
                          int vm_argc, char *vm_argv[], int argc, char *argv[]) {
     auto jvm_dll = LoadLibrary(jvm_dll_path);
     if (jvm_dll == nullptr) {
+        MessageBox(nullptr, "Cannot load jvm.dll", TITLE, MB_ICONERROR);
         return ERROR_LOAD_JVM_DLL;
     }
     CreateJavaVM createJavaVM = (CreateJavaVM) GetProcAddress(jvm_dll, "JNI_CreateJavaVM");
@@ -41,7 +47,7 @@ extern "C" int start_jvm(char *jvm_dll_path, char *class_path, char *main_class,
     }
 
     JavaVMInitArgs vm_init_args;
-    vm_init_args.version = JNI_VERSION_21;
+    vm_init_args.version = JNI_VERSION_10;
     vm_init_args.nOptions = vm_argc + 1;
     vm_init_args.options = options;
     vm_init_args.ignoreUnrecognized = true;
@@ -51,17 +57,20 @@ extern "C" int start_jvm(char *jvm_dll_path, char *class_path, char *main_class,
     createJavaVM(&jvm, (void **) &env, &vm_init_args);
     delete[] options;
     if (jvm == nullptr || env == nullptr) {
+        show_error_msg("Cannot create Java Virtual Machine", TITLE);
         return ERROR_CREATE_JAVA_VM;
     }
 
     jclass clz = env->FindClass(main_class);
     if (clz == nullptr) {
         check_exception(env);
+        show_error_msg("Main class not found in classpath. See console for details.", TITLE);
         return ERROR_MAIN_CLASS_LOAD;
     }
     jmethodID main_method = env->GetStaticMethodID(clz, "main", "([Ljava/lang/String;)V");
     if (main_method == nullptr) {
         check_exception(env);
+        show_error_msg("Main method not found. See console for details.", TITLE);
         return ERROR_MAIN_METHOD_NOT_FOUND;
     }
 
@@ -72,6 +81,7 @@ extern "C" int start_jvm(char *jvm_dll_path, char *class_path, char *main_class,
     }
     env->CallStaticVoidMethod(clz, main_method, params);
     if (check_exception(env)) {
+        show_error_msg("Cannot invoke main method. See console for details.", TITLE);
         return ERROR_MAIN_METHOD_INVOKE;
     }
 

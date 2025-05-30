@@ -8,14 +8,12 @@ Jini is a simple executable for Windows that launches a JVM and starts your java
 ### Requirements
 
 * [MinGW](https://www.mingw-w64.org/downloads/)
-* latest JDK LTS
+* minimum JDK 17 LTS 
 * [Nim](https://nim-lang.org/)
 
 ```shell
-# install dependencies
-nimble install winim sunny
 # compile jni invocation library and app
-make JNI="c:/soft/java-21/include"
+make JNI="c:/soft/java-17/include"
 ```
 
 ## Using
