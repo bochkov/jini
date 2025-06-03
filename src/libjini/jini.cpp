@@ -1,5 +1,5 @@
 #include <jni.h>
-#include <stdio.h>
+#include <cstdio>
 #include <windows.h>
 
 #define TITLE "jini.dll"
@@ -32,7 +32,7 @@ extern "C" void show_error_msg(const char *msg, const char *title) {
 }
 
 extern "C" int start_jvm(char *jvm_dll_path, char *class_path, char *main_class,
-                         int vm_argc, char *vm_argv[], int argc, char *argv[]) {
+                         int vm_argc, char **vm_argv, int argc, char **argv) {
     auto jvm_dll = LoadLibrary(jvm_dll_path);
     if (jvm_dll == nullptr) {
         MessageBox(nullptr, "Cannot load jvm.dll", TITLE, MB_ICONERROR);
@@ -87,4 +87,17 @@ extern "C" int start_jvm(char *jvm_dll_path, char *class_path, char *main_class,
 
     jvm->DestroyJavaVM();
     return 0;
+}
+
+extern "C" HANDLE create_mutex(const char *name) {
+    HANDLE mutex = CreateMutex(nullptr, TRUE, name);
+    if (ERROR_ALREADY_EXISTS == GetLastError()) {
+        return nullptr;
+    }
+    return mutex;
+}
+
+extern "C" void release_mutex(HANDLE mutex) {
+    ReleaseMutex(mutex);
+    CloseHandle(mutex);
 }

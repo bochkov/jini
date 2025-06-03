@@ -8,8 +8,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O2 -s")
 
 include_directories(BEFORE SYSTEM ${JNI_INCLUDE_PATH} ${JNI_INCLUDE_PATH}/win32)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_library(jini STATIC src/libjini/jini.cpp)
-else()
-    add_library(jini SHARED src/libjini/jini.cpp)
-endif()
+add_library(jini STATIC src/libjini/jini.cpp)
+add_library(libjini SHARED src/libjini/jini.cpp)
+set_target_properties(libjini PROPERTIES PREFIX "" SUFFIX ".dll")

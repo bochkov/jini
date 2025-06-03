@@ -12,8 +12,11 @@ const
 
 proc start_jvm(jvm_dll_path: cstring, class_path: cstring, main_class: cstring,
     vm_argc: int, vm_argv: cstringArray,
-    argc: int, args: cstringArray): int {.cdecl dynlib: libjini importc: "start_jvm".}
-proc show_error_msg(msg: cstring, title: cstring): void {.cdecl dynlib: libjini importc: "show_error_msg".}
+    argc: int, args: cstringArray): int {. cdecl dynlib: libjini importc: "start_jvm" .}
+
+proc create_mutex(name: cstring) : int {. cdecl dynlib: libjini importc: "create_mutex" .}
+proc release_mutex(mutex: int) {. cdecl dynlib: libjini importc: "release_mutex" .}
+proc show_error_msg(msg: cstring, title: cstring): void {. cdecl dynlib: libjini importc: "show_error_msg" .}
 
 type
     Config = object
@@ -52,6 +55,10 @@ when isMainModule:
     let args = commandLineParams()
     try:
         let cfg = readConfig("lib/package.json")
+        let handle = create_mutex(cstring(cfg.mainClass))
+        if handle == 0:
+            system.quit("another instance already running", 1)
+
         let jvmDll = findJvmDll()
         discard start_jvm(
             cstring(jvmDll),
@@ -62,6 +69,8 @@ when isMainModule:
             args.len + cfg.args.len,
             allocCStringArray(args & cfg.args),
         )
+
+        release_mutex(handle)
     except JsonParsingError, ValueError:
         show_error_msg(
             cstring("Package description read error: " & getCurrentExceptionMsg()),
