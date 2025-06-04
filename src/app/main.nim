@@ -28,11 +28,17 @@ type
 proc readConfig(location: string): Config =
     if fileExists(location):
         let json = parseFile(location)
+        var vmArgs: seq[string] = @[]
+        for node in json{"vm.args"}.getElems():
+            vmArgs.add(node.getStr())
+        var args: seq[string] = @[]
+        for node in json{"args"}.getElems():
+            args.add(node.getStr())
         let cfg = Config(
             mainClass: json["main.class"].getStr(),
             classPath: json["class.path"].to(seq[string]),
-            vmArgs: json["vm.args"].to(seq[string]),
-            args: json["args"].to(seq[string])
+            vmArgs: vmArgs,
+            args: args,
         )
         return cfg
 
